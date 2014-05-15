@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"x`>
+  <title>Yo!</title>
+  <link rel="stylesheet" href="css/bootstrap.min.css" />
+  <style>
+    .export-data.btn {
+      margin-top: 10px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body ng-app="AccerecorderApp">
+
+  <div class="container" ng-controller="MainControlsCtrl">
+    <h1>{{displayMessage}}</h1>
+    <div ng-switch on="recordingState">
+      <button ng-switch-when="recordingOff" class="btn btn-block btn-success start-recording" ng-click="startRecording()">Start</button>
+      <button ng-switch-when="recordingOn" class="btn btn-block btn-danger end-recording" ng-click="endRecording()">End</button>
+    </div>
+    <button ng-show="hasData()" class="btn btn-block btn-primary export-data" ng-click="exportData()">Export</button>
+    <textarea ng-model="exportedData" style="height: 500px; width: 100%; overflow: scroll;" ng-show="hasData()"></textarea>
+  </div>
+
+  <script src="js/jquery.min.js"></script>
+  <script src="js/lodash.min.js"></script>
+  <script src="js/bootstrap.js"></script>
+  <script src="js/angular.min.js"></script>
+  <script>
+    var app = angular.module('AccerecorderApp', []);
+
+    app.controller('MainControlsCtrl', function($scope) {
+      var
+        RECORDING_STATES = {
+          ON: 'recordingOn',
+          OFF: 'recordingOff'
+        },
+
+        DISPLAY_MESSAGES = {
+          START: "Start recording",
+          RECORDING: "Recording..."
+        },
+        recordedData = [],
+        dataRecordingTimeout;
+
+      $scope.exportedData = '';
+      $scope.recordingState = RECORDING_STATES.OFF;
+      setDisplayMessage(DISPLAY_MESSAGES.START);
+
+      $scope.startRecording = function() {
+        recordedData = [];
+
+        $scope.recordingState = RECORDING_STATES.ON;
+        setDisplayMessage(DISPLAY_MESSAGES.RECORDING);
+
+        $(window).on('devicemotion', handleDeviceOrientation);
+      };
+
+      $scope.endRecording = function() {
+        $scope.recordingState = RECORDING_STATES.OFF;
+        setDisplayMessage(DISPLAY_MESSAGES.START);
+
+        $(window).off('deviceorientation');
+      };
+
+      $scope.exportData = function() {
+        $scope.exportedData = JSON.stringify(recordedData);
+      }
+
+      $scope.hasData = function() {
+        return recordedData.length > 0;
+      }
+
+      function setDisplayMessage(msg) {
+        $scope.displayMessage = msg;
+      }
+
+      function handleDeviceOrientation(data) {
+        var
+          orig = data.originalEvent,
+          acceleration = orig.acceleration || {},
+          rotation = orig.rotationRate || {};
+
+        recordedData.push({
+          time: data.timeStamp,
+          gamma: rotation.gamma,
+          alpha: rotation.alpha,
+          beta: rotation.beta,
+          x: acceleration.x,
+          y: acceleration.y,
+          z: acceleration.z
+        });
+      }
+    });
+    // init();
+
+    // function init() {
+    //   if (window.DeviceOrientationEvent) {
+    //     window.addEventListener('deviceorientation', deviceOrientationHandler, false);
+    //   } else {
+    //     document.getElementById("doEvent").innerHTML = "Not supported on your device or browser.  Sorry."
+    //   }
+    // }
+
+    // function deviceOrientationHandler(data) {
+    //   var txt = document.getElementById('msg');
+    //   var text = txt.textContent;
+
+    //   txt.textContent = txt.textContent + JSON.stringify({ gamma: data.gamma, beta: data.beta, alpha: data.alpha });
+    // }
+
+    // Some other fun rotations to try...
+    //var rotation = "rotate3d(0,1,0, "+ (tiltLR*-1)+"deg) rotate3d(1,0,0, "+ (tiltFB*-1)+"deg)";
+    //var rotation = "rotate("+ tiltLR +"deg) rotate3d(0,1,0, "+ (tiltLR*-1)+"deg) rotate3d(1,0,0, "+ (tiltFB*-1)+"deg)";
+    </script>
+</body>
+</html>
